@@ -1,0 +1,28 @@
+// Notes
+
+Unable to set signal handler for division by zero (0)
+Unable to set signal handler for debug exception (1)
+Unable to set signal handler for breakpoint (3)
+Unable to set signal handler for bound range exception (5)
+Unable to set signal handler for device not available (7)
+Unable to set signal handler for coprocessor segment overrun (reserved) (9)
+Unable to set signal handler for invalid task state segment (10)
+Unable to set signal handler for stack fault (12)
+Unable to set signal handler for general protection (13)
+Unable to set signal handler for page fault (14)
+Unable to set signal handler for floating-point error (16)
+Unable to set signal handler for alignment check (17)
+Unable to set signal handler for machine check (18)
+Unable to set signal handler for [Intel reserved] (19)
+Unable to set signal handler for [Intel reserved] (20)
+
+// Logs
+
+[07/08/2024 22:12:03] Program crashed at line 20 in Core.cpp, reason: hni
+
+[07/08/2024 22:24:53] Program crashed at line 23 in Main.cpp, reason: hi
+
+[10/08/2024 20:01:47] Program crashed at line 49 in ComponentManager.h, reason: Component "struct Snail::SimpleComponent" was not registered
+
+[12/08/2024 17:16:09] Program crashed at line 41 in Core.cpp, reason: GLEW failed to initialise
+

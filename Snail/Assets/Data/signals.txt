@@ -1,0 +1,23 @@
+division by zero
+debug exception
+null interrupt
+breakpoint
+INTO-detected overflow
+bound range exception
+invalid opcode
+device not available
+double fault
+coprocessor segment overrun [reserved]
+invalid task state segment
+segmentation fault
+stack fault
+general protection
+page fault
+[Intel reserved]
+floating-point error
+alignment check
+machine check
+[Intel reserved]
+[Intel reserved]
+[Intel reserved]
+[Intel reserved]
