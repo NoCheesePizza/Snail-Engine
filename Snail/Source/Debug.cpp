@@ -49,7 +49,8 @@ namespace Snail
 				toLog += " Program crashed at line " + std::to_string(line) + " in " +
 				fileName.substr(fileName.find_last_of('\\') + 1) + ", reason: " + reason + nl + nl;
 			else // OS-induced crash
-				toLog += " Program crashed due to " + signals[signal] + " (" + std::to_string(signal) + ")" + nl + nl;
+				toLog += " Program crashed due to " + signals[signal] + " (" + std::to_string(signal) + ")" 
+				+ nl + nl;
 
 			// open log file for logging
 			std::ofstream ofs("Assets/Data/log.txt", std::ios_base::app);
@@ -59,10 +60,12 @@ namespace Snail
 			if (ofs)
 			{
 				ofs << toLog;
+				__debugbreak();
 				exit(signal);
 			}
 
 			std::cout << "Unable to open log.txt for appending\n";
+			__debugbreak();
 			exit(signal);
 		}
 

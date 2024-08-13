@@ -42,6 +42,12 @@
     <ClCompile Include="Source\Vec2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\AssetManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\System.h">
@@ -77,5 +83,19 @@
     <ClInclude Include="Source\Vec2.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\AssetManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Renderer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\Shaders\Default.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Assets\Shaders\Default.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

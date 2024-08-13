@@ -46,12 +46,18 @@ namespace Snail
 
 	using EntityId = size_t;
 	using CompId = size_t;
-	using TimerId = size_t;
 
 	enum class Component : CompId
 	{
 		SIMPLE,
 		MAX_COMPONENTS
+	};
+
+	enum class ShaderType : unsigned
+	{
+		VERTEX,
+		FRAGMENT,
+		MAX_SHADER_TYPES
 	};
 
 	using Signature = std::bitset<static_cast<size_t>(Component::MAX_COMPONENTS)>;
