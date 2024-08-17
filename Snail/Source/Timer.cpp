@@ -17,7 +17,7 @@ namespace Snail
 
 	std::string TimeData::stringify() const
 	{
-		return "{ actual: " + toStr(actual) + ", target: " + toStr(target) + "}";
+		return "{ actual: " + toStr(actual) + "; target: " + toStr(target) + "}";
 	}
 
 	ProfileData::ProfileData(float _actual, float _percent)
@@ -28,7 +28,7 @@ namespace Snail
 
 	std::string ProfileData::stringify() const
 	{
-		return "{ actual: " + toStr(actual) + ", target: " + toStr(percent) + "}";
+		return "{ actual: " + toStr(actual) + "; target: " + toStr(percent) + "}";
 	}
 
 	void Time::init()
@@ -126,9 +126,9 @@ namespace Snail
 	std::string Timer::stringify() const
 	{
 		std::ostringstream oss;
-		oss << std::boolalpha << "{ isActive: " << isActive << ", isRecurring: " << isRecurring << ", duration: "
-			<< duration << ", entityId: " << (entityId ? toStr(*entityId) : "-")
-			<< ", callback: " << Util::getFunctionSignature(callback) << " }";
+		oss << std::boolalpha << "{ isActive: " << isActive << "; isRecurring: " << isRecurring << "; duration: "
+			<< duration << "; entityId: " << (entityId ? toStr(*entityId) : "-")
+			<< "; callback: " << Util::getFunctionSignature(callback) << " }";
 		return oss.str();
 	}
 

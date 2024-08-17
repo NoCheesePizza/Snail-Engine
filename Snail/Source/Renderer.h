@@ -17,9 +17,15 @@ namespace Snail
 	{
 		GLFWwindow *window;
 
+		unsigned currShader = 0;
+
 		std::unordered_map<std::string, unsigned> vertShaders;
 		std::unordered_map<std::string, unsigned> fragShaders;
 		std::unordered_map<std::string, unsigned> vertFragShaders;
+		std::unordered_map<unsigned, std::unordered_map<std::string, unsigned>> uniforms; // program : name : location
+
+		unsigned compileShader(GLenum type, const std::string &source);
+		unsigned createVertFragShader(GLuint vertId, GLuint fragId);
 
 	public:
 
@@ -28,11 +34,11 @@ namespace Snail
 		void free() override;
 
 		void setWindow(GLFWwindow *_window);
-
-		unsigned compileShader(GLenum type, const std::string &source);
-		unsigned createVertFragShader(GLuint vertId, GLuint fragId);
+		
 		void useVertFragShader(const std::string &name);
-		unsigned getVertFragShader(const std::string &name);
+		unsigned getCurrShader();
+		void setUniform(const std::string &name);
+		unsigned getUniform(const std::string &name);
 	};
 
 }

@@ -23,6 +23,11 @@ namespace Snail
 
 	}
 
+	const std::unordered_set<EntityId> &EntityManager::getEntityIds()
+	{
+		return usedIds;
+	}
+
 	EntityId EntityManager::addEntity()
 	{
 		crashIf(usableIds.empty(), "Max entities reached");

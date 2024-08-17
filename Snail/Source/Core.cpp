@@ -20,11 +20,11 @@ namespace Snail
 		unsigned shader;
 
 		template <typename T>
-		void addSystem(bool shdProfile)
+		void addSystem(bool shldProfile)
 		{
 			systems.push_back(std::make_unique<T>());
 			systems.back()->systemName = typeid(T).name();
-			systems.back()->shdProfile = shdProfile;
+			systems.back()->shldProfile = shldProfile;
 		}
 
 		void init()
@@ -65,7 +65,8 @@ namespace Snail
 
 		void update()
 		{
-			float pos[] = { -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f };
+#if 0
+			float pos[] = { 160.f, 120.f, 480.f, 120.f, 480.f, 360.f, 160.f, 360.f };
 			unsigned indices[] = { 0, 1, 2, 2, 3, 0 };
 			unsigned vao;
 			glGenVertexArrays(1, &vao);
@@ -81,16 +82,29 @@ namespace Snail
 			glGenBuffers(1, &indexBuffer);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned), indices, GL_STATIC_DRAW);
+#endif
 
-			//shader = createShader(gs(AssetManager)->getShaderSource(ShaderType::VERTEX, "Default"),
-				//gs(AssetManager)->getShaderSource(ShaderType::FRAGMENT, "Default"));
-			//glUseProgram(shader);
+			EntityId rect = gs(EntityManager)->addEntity();
+			ShapeComponent shape;
+
+			shape.vertices = std::vector<Vertex>{ Vertex({ 100, 100 }), Vertex({ 300, 100 }), Vertex({ 300, 200 }), Vertex({ 100, 200 }), Vertex({ 150, 125 }), Vertex({ 250, 125 }), Vertex({ 250, 175 }), Vertex({ 150, 175 }) };
+			shape.edges = std::vector<Edge>{ { Edge(0, 1), Edge(1, 2), Edge(2, 3), Edge(3, 0), Edge(4, 5), Edge(5, 6), Edge(6, 7), Edge(7, 4) } };
+
+			shape.isDirty = true;
+			shape.isBufferDirty = true;
+			shape.update();
+			gs(ComponentManager)->addComponent<ShapeComponent>(rect, shape);
+
+
 			gs(Renderer)->useVertFragShader("Default + Default");
 
-			int location = glGetUniformLocation(gs(Renderer)->getVertFragShader("Default + Default"), "u_color");
-			crashIf(location == -1, "Uniform not found");
-			float r = 0.f, increment = 3.f;
+			//location = glGetUniformLocation(gs(Renderer)->getVertFragShader("Default + Default"), "u_color");
+			//crashIf(location == -1, "Uniform not found");
+			//float r = 0.f, increment = 3.f;
 			gs(Time)->setFps(60.f);
+
+			//int loc = glGetUniformLocation(gs(Renderer)->getVertFragShader("Default + Default"), "screenSize");
+			//crashIf(loc == -1, "Uniform not found");
 				
 			/* Loop until the user closes the window */
 			while (!glfwWindowShouldClose(window))
@@ -101,17 +115,18 @@ namespace Snail
 				glClear(GL_COLOR_BUFFER_BIT);
 
 				//glDrawArrays(GL_TRIANGLES, 0, 3);
-				glUniform4f(location, r, 0.3f, 0.8f, 1.f);
-				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr); // 6 = 6 vertices but 2 use same coords
+				//glUniform4f(location, r, 0.3f, 0.8f, 1.f);
+				//glUniform2f(loc, 640.f, 480.f);
+				//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr); // 6 = 6 vertices but 2 use same coords
 
 				for (auto &system : systems)
 					system->update();
 
-				if (r > 1.f)
-					increment = -3.f;
-				else if (r < 0.f)
-					increment = 3.f;
-				r += increment * gs(Time)->getDt().actual;
+				//if (r > 1.f)
+				//	increment = -3.f;
+				//else if (r < 0.f)
+				//	increment = 3.f;
+				//r += increment * gs(Time)->getDt().actual;
 
 				/* Swap front and back buffers */
 				glfwSwapBuffers(window);

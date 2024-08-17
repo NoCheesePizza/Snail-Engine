@@ -2,6 +2,10 @@
 #include "Utility.h"
 #include "AssetManager.h"
 #include "Core.h"
+#include "Components.h"
+#include "ComponentManager.h"
+#include "EntityManager.h"
+#include "Timer.h"
 
 #include <iostream> // for debugging
 
@@ -17,7 +21,7 @@ namespace Snail
 		if (severity != 0x826b)
 		{
 			std::ostringstream oss;
-			oss << "OpenGL error!\nSource: 0x" << std::hex << source << "; Type: 0x" << type
+			oss << "OpenGL error!u\nSource: 0x" << std::hex << source << "; Type: 0x" << type
 				<< "; ID: 0x" << id << "; Severity: 0x" << severity << "; Message: " << std::string(message);
 			crashIf(true, oss.str());
 		}
@@ -34,19 +38,50 @@ namespace Snail
 		for (const auto &[vName, vId] : vertShaders)
 			for (const auto &[fName, fId] : fragShaders)
 				vertFragShaders[vName + " + " + fName] = createVertFragShader(vId, fId);
-	}
 
-	void Renderer::update()
-	{
-
-	}
-
-	void Renderer::free()
-	{
 		for (const auto &[name, id] : vertShaders)
 			glDeleteShader(id);
 		for (const auto &[name, id] : fragShaders)
 			glDeleteShader(id);
+
+		// set uniform locations
+		useVertFragShader("Default + Default");
+		setUniform("fillColor");
+		setUniform("lineColor");
+		setUniform("shldUseFillColor");
+		setUniform("screenSize");
+
+		// set static uniforms
+		glUniform2f(gs(Renderer)->getUniform("screenSize"), 640.f, 280.f);
+	}
+
+	void Renderer::update()
+	{
+		for (EntityId entity : gs(EntityManager)->getEntityIds())
+		{
+			ShapeComponent &shape = gs(ComponentManager)->getComponent<ShapeComponent>(entity);
+			shape.update();
+
+			glUniform4f(getUniform("fillColor"), shape.fillColor.r, shape.fillColor.g, shape.fillColor.b,
+				shape.fillColor.a);
+			glUniform1i(getUniform("shldUseFillColor"), shape.shldUseFillColor);
+			glBindVertexArray(shape.vaoId);
+			glDrawElements(GL_TRIANGLES, static_cast<GLuint>(shape.ebo.size()), GL_UNSIGNED_INT, nullptr);
+
+			glUniform4f(getUniform("lineColor"), shape.strokeColor.r, shape.strokeColor.g, shape.strokeColor.b,
+				shape.strokeColor.a); // set line colour
+
+			for (const Line &line : shape.lines)
+				if (shape.edges[*line.edge].type != EdgeType::ADDED)
+				{
+					glBindVertexArray(line.vaoId);
+					glDrawElements(GL_TRIANGLES, static_cast<GLuint>(line.ebo.size()), GL_UNSIGNED_INT, nullptr);
+				}
+		}
+	}
+
+	void Renderer::free()
+	{
 		for (const auto &[name, id] : vertFragShaders)
 			glDeleteProgram(id);
 	}
@@ -95,14 +130,26 @@ namespace Snail
 	{
 		crashIf(!vertFragShaders.count(name), "Vertex + fragment shader " +
 			Util::quote(name) + " does not exist");
-		glUseProgram(vertFragShaders.at(name));
+		currShader = vertFragShaders.at(name);
+		glUseProgram(currShader);
 	}
 
-	unsigned Renderer::getVertFragShader(const std::string &name)
+	unsigned Renderer::getCurrShader()
 	{
-		crashIf(!vertFragShaders.count(name), "Vertex + fragment shader " +
-			Util::quote(name) + " does not exist");
-		return vertFragShaders.at(name);
+		return currShader;
+	}
+
+	void Renderer::setUniform(const std::string &name)
+	{
+		unsigned location = glGetUniformLocation(currShader, name.c_str());
+		crashIf(location == -1, "Uniform " + Util::quote(name) + " could not be found");
+		uniforms.at(currShader)[name] = location;
+	}
+
+	unsigned Renderer::getUniform(const std::string &name)
+	{
+		crashIf(!uniforms.at(currShader).count(name), "Uniform " + Util::quote(name) + " could not be found");
+		return uniforms.at(currShader).at(name);
 	}
 
 }

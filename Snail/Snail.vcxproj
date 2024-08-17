@@ -140,6 +140,7 @@
     <ClCompile Include="Source\AssetManager.cpp" />
     <ClCompile Include="Source\ComponentArray.cpp" />
     <ClCompile Include="Source\ComponentManager.cpp" />
+    <ClCompile Include="Source\Components.cpp" />
     <ClCompile Include="Source\Core.cpp" />
     <ClCompile Include="Source\Debug.cpp" />
     <ClCompile Include="Source\EntityManager.cpp" />
@@ -147,6 +148,7 @@
     <ClCompile Include="Source\Renderer.cpp" />
     <ClCompile Include="Source\System.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
+    <ClCompile Include="Source\Types.cpp" />
     <ClCompile Include="Source\Vec2.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +163,7 @@
     <ClInclude Include="Source\Renderer.h" />
     <ClInclude Include="Source\System.h" />
     <ClInclude Include="Source\Timer.h" />
+    <ClInclude Include="Source\Types.h" />
     <ClInclude Include="Source\Utility.h" />
     <ClInclude Include="Source\Vec2.h" />
   </ItemGroup>

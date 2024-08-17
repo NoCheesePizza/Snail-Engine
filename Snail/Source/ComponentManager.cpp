@@ -6,6 +6,7 @@ namespace Snail
 	void ComponentManager::init()
 	{
 		registerComponent<TransformComponent>();
+		registerComponent<ShapeComponent>();
 	}
 
 	void ComponentManager::update()

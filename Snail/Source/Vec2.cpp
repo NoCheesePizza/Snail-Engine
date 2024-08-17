@@ -15,7 +15,7 @@ namespace Snail
 
 	std::string Vec2::stringify() const
 	{
-		return "{ x: " + toStr(x) + ", y: " + toStr(y) + " }";
+		return "{ x: " + toStr(x) + "; y: " + toStr(y) + " }";
 	}
 
 	Vec2 Vec2::operator+(Vec2 vec) const
@@ -168,7 +168,7 @@ namespace Snail
 		return Util::isEqual(x, vec.x) && Util::isEqual(y, vec.y);
 	}
 
-	Vec2 Vec2::normal() const
+	Vec2 Vec2::normalize() const
 	{
 		float len = length();
 		if (len)

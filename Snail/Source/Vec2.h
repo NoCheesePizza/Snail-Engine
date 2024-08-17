@@ -48,7 +48,7 @@ namespace Snail
 		bool operator<=(Vec2 vec) const;
 		bool operator==(Vec2 vec) const;
 
-		Vec2 normal() const;
+		Vec2 normalize() const;
 		Vec2 outwardNormal() const;
 		Vec2 inwardNormal() const;
 

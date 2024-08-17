@@ -23,9 +23,12 @@ namespace Snail
 		void update() override;
 		void free() override;
 
+		const std::unordered_set<EntityId> &getEntityIds();
+		
 		EntityId addEntity();
 		void removeEntity(EntityId id);
 		bool isEntityAlive(EntityId id);
+
 		void setSignature(EntityId id, Signature signature);
 		Signature getSignature(EntityId id);
 	};

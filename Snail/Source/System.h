@@ -10,7 +10,7 @@ namespace Snail
 	public:
 
 		std::string systemName;
-		bool shdProfile = true;
+		bool shldProfile = true;
 
 		virtual void init() = 0;
 		virtual void update() = 0;
