@@ -65,75 +65,34 @@ namespace Snail
 
 		void update()
 		{
-#if 0
-			float pos[] = { 160.f, 120.f, 480.f, 120.f, 480.f, 360.f, 160.f, 360.f };
-			unsigned indices[] = { 0, 1, 2, 2, 3, 0 };
-			unsigned vao;
-			glGenVertexArrays(1, &vao);
-			glBindVertexArray(vao);
-			
-			unsigned buffer, indexBuffer;
-			glGenBuffers(1, &buffer); // create 1 vertex buffer and get id of buffer back
-			glBindBuffer(GL_ARRAY_BUFFER, buffer); // select buffer using id
-			glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), pos, GL_STATIC_DRAW);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0); // first 0 is index of current attribute, last 0 is offset of current attribute in bytes from first attribute of current vertex (this line links vao to vertex buffer)
-			glEnableVertexAttribArray(0);
-
-			glGenBuffers(1, &indexBuffer);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned), indices, GL_STATIC_DRAW);
-#endif
-
 			EntityId rect = gs(EntityManager)->addEntity();
 			ShapeComponent shape;
 
-			shape.vertices = std::vector<Vertex>{ Vertex({ 100, 100 }), Vertex({ 300, 100 }), Vertex({ 300, 200 }), Vertex({ 100, 200 }), Vertex({ 150, 125 }), Vertex({ 250, 125 }), Vertex({ 250, 175 }), Vertex({ 150, 175 }) };
-			shape.edges = std::vector<Edge>{ { Edge(0, 1), Edge(1, 2), Edge(2, 3), Edge(3, 0), Edge(4, 5), Edge(5, 6), Edge(6, 7), Edge(7, 4) } };
+			shape.vertices = std::vector<Vertex>{ Vertex({ -200, -100 }), Vertex({ 200, -100 }), 
+				Vertex({ 200, 100 }), Vertex({ -200, 100 }), Vertex({ -100, -50 }), Vertex({ 100, -50 }), 
+				Vertex({ 100, 50 }), Vertex({ -100, 50 }) }; // too lazy to write .f
+			shape.edges = std::vector<Edge>{ { Edge(0, 1), Edge(1, 2), Edge(2, 3), Edge(3, 0), Edge(4, 5), 
+				Edge(5, 6), Edge(6, 7), Edge(7, 4) } };
 
 			shape.isDirty = true;
-			shape.isBufferDirty = true;
 			shape.update();
+
 			gs(ComponentManager)->addComponent<ShapeComponent>(rect, shape);
-
-
+			gs(ComponentManager)->addComponent<TransformComponent>(rect);
+			
 			gs(Renderer)->useVertFragShader("Default + Default");
-
-			//location = glGetUniformLocation(gs(Renderer)->getVertFragShader("Default + Default"), "u_color");
-			//crashIf(location == -1, "Uniform not found");
-			//float r = 0.f, increment = 3.f;
 			gs(Time)->setFps(60.f);
 
-			//int loc = glGetUniformLocation(gs(Renderer)->getVertFragShader("Default + Default"), "screenSize");
-			//crashIf(loc == -1, "Uniform not found");
-				
-			/* Loop until the user closes the window */
 			while (!glfwWindowShouldClose(window))
 			{
 				gs(Time)->beginDt();
-
-				/* Render here */
 				glClear(GL_COLOR_BUFFER_BIT);
-
-				//glDrawArrays(GL_TRIANGLES, 0, 3);
-				//glUniform4f(location, r, 0.3f, 0.8f, 1.f);
-				//glUniform2f(loc, 640.f, 480.f);
-				//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr); // 6 = 6 vertices but 2 use same coords
 
 				for (auto &system : systems)
 					system->update();
 
-				//if (r > 1.f)
-				//	increment = -3.f;
-				//else if (r < 0.f)
-				//	increment = 3.f;
-				//r += increment * gs(Time)->getDt().actual;
-
-				/* Swap front and back buffers */
 				glfwSwapBuffers(window);
-
-				/* Poll for and process events */
 				glfwPollEvents();
-
 				gs(Time)->endDt();
 			}
 		}

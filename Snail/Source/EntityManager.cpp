@@ -62,4 +62,9 @@ namespace Snail
 		return entities[id];
 	}
 
+	bool EntityManager::hasComponent(EntityId entity, Component comp)
+	{
+		return getSignature(entity).test(static_cast<size_t>(comp));
+	}
+
 }

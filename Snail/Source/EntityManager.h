@@ -31,6 +31,7 @@ namespace Snail
 
 		void setSignature(EntityId id, Signature signature);
 		Signature getSignature(EntityId id);
+		bool hasComponent(EntityId entity, Component comp);
 	};
 
 }

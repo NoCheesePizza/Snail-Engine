@@ -2,7 +2,6 @@
 
 #include "Debug.h"
 #include "Vec2.h"
-#include "Types.h"
 
 #include <string>
 #include <vector>
@@ -39,6 +38,7 @@
 // time
 #define NOW std::chrono::steady_clock::now()
 #define EPSILON 0.000001f
+#define PI 3.141592f
 
 namespace Snail
 {
@@ -47,6 +47,30 @@ namespace Snail
 
 	namespace Util
 	{
+
+		inline float radToDeg(float rad)
+		{
+			return rad * 180.f / static_cast<float>(PI);
+		}
+
+		inline float degToRad(float deg)
+		{
+			return deg * static_cast<float>(PI) / 180.f;
+		}
+
+		inline Vec2 rotate(Vec2 pos, float rad, Vec2 origin)
+		{
+			Vec2 dir = pos - origin, temp;
+			float length = dir.length();
+			dir = dir.normalize();
+
+			temp.x = cosf(rad) * dir.x - sinf(rad) * dir.y;
+			temp.y = sinf(rad) * dir.x + cosf(rad) * dir.y;
+
+			temp *= length;
+			temp += origin;
+			return temp;
+		}
 
 		inline std::string toString(bool val)
 		{

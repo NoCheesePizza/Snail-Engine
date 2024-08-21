@@ -47,9 +47,9 @@ namespace Snail
 		// set uniform locations
 		useVertFragShader("Default + Default");
 		setUniform("fillColor");
-		setUniform("lineColor");
 		setUniform("shldUseFillColor");
 		setUniform("screenSize");
+		setUniform("origin");
 
 		// set static uniforms
 		glUniform2f(gs(Renderer)->getUniform("screenSize"), 640.f, 280.f);
@@ -60,20 +60,30 @@ namespace Snail
 		for (EntityId entity : gs(EntityManager)->getEntityIds())
 		{
 			ShapeComponent &shape = gs(ComponentManager)->getComponent<ShapeComponent>(entity);
+			TransformComponent &transform = gs(ComponentManager)->getComponent<TransformComponent>(entity);
+			shape.translate(Vec2(50.f, 25.f) * gs(Time)->getDt().actual);
 			shape.update();
 
-			glUniform4f(getUniform("fillColor"), shape.fillColor.r, shape.fillColor.g, shape.fillColor.b,
-				shape.fillColor.a);
-			glUniform1i(getUniform("shldUseFillColor"), shape.shldUseFillColor);
-			glBindVertexArray(shape.vaoId);
-			glDrawElements(GL_TRIANGLES, static_cast<GLuint>(shape.ebo.size()), GL_UNSIGNED_INT, nullptr);
+			if (shape.triangles.size())
+			{
+				glUniform4f(getUniform("fillColor"), shape.fillColor.r, shape.fillColor.g, shape.fillColor.b,
+					shape.fillColor.a); // set fill colour
+				glUniform1i(getUniform("shldUseFillColor"), shape.shldUseFillColor); // may use vertices' colours
+				glUniform2f(getUniform("origin"), transform.pos.x, transform.pos.y); // set centre
+				glBindVertexArray(shape.vaoId);
+				glDrawElements(GL_TRIANGLES, static_cast<GLuint>(shape.ebo.size()), GL_UNSIGNED_INT, nullptr);
+			}
 
-			glUniform4f(getUniform("lineColor"), shape.strokeColor.r, shape.strokeColor.g, shape.strokeColor.b,
+			glUniform4f(getUniform("fillColor"), shape.strokeColor.r, shape.strokeColor.g, shape.strokeColor.b,
 				shape.strokeColor.a); // set line colour
+			glUniform1i(getUniform("shldUseFillColor"), 1); // always use fill colour for lines
 
-			for (const Line &line : shape.lines)
+			// draw shape outline
+			for (Line &line : shape.lines)
 				if (shape.edges[*line.edge].type != EdgeType::ADDED)
 				{
+					line.stroke = shape.strokeWidth;
+					line.update();
 					glBindVertexArray(line.vaoId);
 					glDrawElements(GL_TRIANGLES, static_cast<GLuint>(line.ebo.size()), GL_UNSIGNED_INT, nullptr);
 				}
@@ -132,6 +142,7 @@ namespace Snail
 			Util::quote(name) + " does not exist");
 		currShader = vertFragShaders.at(name);
 		glUseProgram(currShader);
+		uniforms[currShader]; // init uniforms container for current shader
 	}
 
 	unsigned Renderer::getCurrShader()

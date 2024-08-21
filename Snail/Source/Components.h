@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utility.h"
+#include "Types.h"
 
 #include <set>
 
@@ -28,9 +29,8 @@ namespace Snail
 		unsigned vboId = 0, vaoId = 0, eboId = 0;
 
 		// please set to true if something was modified
-		bool isBufferDirty = false; // if anything above this variable is modified
+		bool isDirty = false; // if anything in this struct is modified
 		bool isTransformDirty = false; // if the transform component tied to this entity is modified
-		bool isDirty = false; // if anything below this variable is modified
 
 		float strokeWidth = 3.f;
 		Color strokeColor;
@@ -38,13 +38,18 @@ namespace Snail
 		bool shldUseFillColor = true; // use same colour for whole shape or use vertex's colour
 		
 		ShapeComponent() = default;
+		~ShapeComponent();
 
 		void update(); // call every frame before drawing
+
+		void translate(Vec2 dir); // assume transform component's pos has been updated
+		void scale(Vec2 dir); // assume transform component's pos and scale has been updated
+		void rotate(float rad, Vec2 origin); // assume transform component's rot has been updated
 
 	private:
 
 		bool ifIsConvex(const Line &line) const;
-		bool ifIsOutside(const Line &line) const;
+		bool ifIsOutside(const Line &line, unsigned i, unsigned j);
 		bool ifHasIntersection(const Line &line, unsigned i, unsigned j) const;
 	};
 

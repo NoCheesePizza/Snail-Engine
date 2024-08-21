@@ -2,6 +2,7 @@
 
 #include "System.h"
 #include "Utility.h"
+#include "Types.h"
 
 #include <unordered_map>
 #include <chrono>

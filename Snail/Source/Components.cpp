@@ -22,10 +22,11 @@ namespace Snail
 		return line.ifIsOnOneSide(positions);
 	}
 
-	bool ShapeComponent::ifIsOutside(const Line &line) const
+	bool ShapeComponent::ifIsOutside(const Line &line, unsigned i, unsigned j)
 	{
 		crashIf(raycasts.empty(), "Raycasts vector is empty");
 		std::pair<unsigned, unsigned> distribution; // of outside (true) and inside (false) respectively
+		std::for_each(edges.begin(), edges.end(), [this](auto &elem) { elem.shldIgnore = false; });
 
 		for (Vec2 raycast : raycasts)
 		{
@@ -36,8 +37,29 @@ namespace Snail
 			// are outside (all edges are defaulted to outside, user has to manually set to inside for this to take effect)
 			for (const Line &obstacle : lines)
 				if (&obstacle != &line && edges[*obstacle.edge].type != EdgeType::REMOVED &&
-					edges[*obstacle.edge].isOutside && obstacle.findIntersection(ray))
-					++intersections;
+					edges[*obstacle.edge].isOutside && !edges[*obstacle.edge].shldIgnore)
+				{
+					IntersectData data = obstacle.findIntersection(ray, 0.f);
+
+					if (data.isIntersecting)
+					{
+						// interesects raycast at a vertex that might be connected to another edge that now should be ignored
+						if (Util::isEqual(data.t, 0.f) || Util::isEqual(data.t, 1.f))
+						{
+							// check which vertex it intersected
+							unsigned vertex = vertices[edges[*obstacle.edge].p1].pos.squareDistance
+							(data.intersection) < vertices[edges[*obstacle.edge].p2].pos.squareDistance
+							(data.intersection) ? edges[*obstacle.edge].p1 : edges[*obstacle.edge].p2;
+
+							std::for_each(edges.begin(), edges.end(), [this, vertex](auto &elem) {
+								if (elem.p1 == vertex || elem.p2 == vertex)
+									elem.shldIgnore = true;
+								});
+						}
+
+						++intersections;
+					}
+				}
 
 			if (!(intersections % 2))
 				++distribution.first;
@@ -60,7 +82,7 @@ namespace Snail
 				|| otherEdge.type == EdgeType::REMOVED) // ADDED or REMOVED?
 				continue;
 
-			if (otherLine.findIntersection(line))
+			if (otherLine.findIntersection(line).isIntersecting)
 			{
 				hasIntersection = true;
 				break;
@@ -68,6 +90,18 @@ namespace Snail
 		}
 
 		return hasIntersection;
+	}
+
+	ShapeComponent::~ShapeComponent()
+	{
+		if (!vaoId || !vboId || !eboId)
+		{
+			crashIf(vaoId || vboId || eboId, "One or more of vaoId/vboId/eboId doesn't match");
+
+			glDeleteBuffers(1, &eboId);
+			glDeleteBuffers(1, &vboId);
+			glDeleteVertexArrays(1, &vaoId);
+		}
 	}
 
 	void ShapeComponent::update()
@@ -86,11 +120,13 @@ namespace Snail
 
 			glBindBuffer(GL_ARRAY_BUFFER, vboId);
 			glBufferData(GL_ARRAY_BUFFER, vbo.size() * sizeof(float), vbo.data(), GL_DYNAMIC_DRAW);
+			
+			std::for_each(lines.begin(), lines.end(), [](auto &elem) { elem.isDirty = true; });
 		}
 
-		if (isBufferDirty)
+		if (isDirty)
 		{
-			isBufferDirty = false;
+			isDirty = false;
 
 			/*! ------------ Clear old buffers ------------ */
 
@@ -113,22 +149,25 @@ namespace Snail
 
 			for (unsigned i = 0; i < static_cast<unsigned>(lines.size()); ++i) // lines[i] == line1
 				for (unsigned j = 0; j < static_cast<unsigned>(lines.size()); ++j) // lines[j] == line2
-					if (i != j && edges[*lines[i].edge].type != EdgeType::REMOVED 
+					if (i != j && edges[*lines[i].edge].type != EdgeType::REMOVED
 						&& edges[*lines[j].edge].type != EdgeType::REMOVED) // can't put together with next line
-						if (std::optional<Vec2> intersection = lines[i].findIntersection(lines[j]))
+					{
+						IntersectData data = lines[i].findIntersection(lines[j]);
+
+						if (data.isIntersecting)
 						{
 							// add new vertex at the intersection if it doesn't exist already
 							unsigned newVertexIdx = static_cast<unsigned>(std::find(vertices.begin(),
-								vertices.end(), Vertex(*intersection)) - vertices.begin()); // largest index
+								vertices.end(), Vertex(data.intersection)) - vertices.begin()); // largest index
 							unsigned lastIdx = static_cast<unsigned>(edges.size()); // bind to new edge
 							if (newVertexIdx == static_cast<unsigned>(vertices.size()))
-								vertices.emplace_back(*intersection, VertexType::ADDED);
+								vertices.emplace_back(data.intersection, VertexType::ADDED);
 
 							// add 4 edges to connect old points to new vertex
-							lines.emplace_back(lines[i].p1, *intersection, lastIdx);
-							lines.emplace_back(lines[i].p2, *intersection, lastIdx + 1);
-							lines.emplace_back(lines[j].p1, *intersection, lastIdx + 2);
-							lines.emplace_back(lines[j].p2, *intersection, lastIdx + 3);
+							lines.emplace_back(lines[i].p1, data.intersection, lastIdx);
+							lines.emplace_back(lines[i].p2, data.intersection, lastIdx + 1);
+							lines.emplace_back(lines[j].p1, data.intersection, lastIdx + 2);
+							lines.emplace_back(lines[j].p2, data.intersection, lastIdx + 3);
 
 							// same as above
 							edges.emplace_back(edges[*lines[i].edge].p1, newVertexIdx, EdgeType::ADDED,
@@ -152,6 +191,7 @@ namespace Snail
 							crashIf(toRemove == edges.end(), "Could not find edge");
 							toRemove->type = EdgeType::REMOVED;
 						}
+					}
 
 			/*! ------------ Remove dangling edges and vertices ------------ */
 
@@ -223,7 +263,7 @@ namespace Snail
 					Line currLine = Line(vertices[i].pos, vertices[j].pos);
 
 					// check if line intersects any other lines or if it is outside the shape
-					if (!ifHasIntersection(currLine, i, j) && !ifIsOutside(currLine))
+					if (!ifHasIntersection(currLine, i, j) && !ifIsOutside(currLine, i, j))
 					{
 						currLine.edge = static_cast<unsigned>(edges.size());
 						lines.push_back(currLine);
@@ -275,6 +315,10 @@ namespace Snail
 				}
 			}
 
+			// debug info
+			PRINT(edges);
+			PRINT(triangles);
+
 			/*! ------------ Initialise EBO ------------ */
 
 			for (const Triangle &triangle : triangles)
@@ -303,17 +347,60 @@ namespace Snail
 			glGenBuffers(1, &eboId);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, ebo.size() * sizeof(unsigned), ebo.data(), GL_DYNAMIC_DRAW);
-		}
 
-		if (isDirty)
-		{
-			isDirty = false;
-
-			std::for_each(lines.begin(), lines.end(), [this](auto &elem) {
-				elem.shldUpdateBuffers = true;
-				elem.update(strokeWidth);
-				});
+			std::for_each(lines.begin(), lines.end(), [](auto &elem) { elem.isDirty = true; });
 		}
 	}
+
+	void ShapeComponent::translate(Vec2 dir)
+	{
+		isTransformDirty = true; 
+
+		for (Line &line : lines)
+		{
+			line.isDirty = true;
+			line.p1 += dir;
+			line.p2 += dir;
+		}
+
+		for (Vec2 &raycast : raycasts)
+			raycast += dir;
+
+		for (Vertex &vertex : vertices)
+			vertex.pos += dir;
+	}
+
+	void ShapeComponent::scale(Vec2 dir)
+	{
+		isTransformDirty = true;
+		Vec2 halfDir = dir / 2.f;
+		Vec2 normdir = dir.normalize();
+
+		for (Line &line : lines)
+		{
+			line.isDirty = true;
+			line.p1 += halfDir * line.p1.normalize().dot(dir);
+			line.p2 += halfDir * line.p2.normalize().dot(dir);
+		}
+
+		for (Vertex &vertex : vertices)
+			vertex.pos += halfDir * vertex.pos.normalize().dot(dir);
+	}
+
+	void ShapeComponent::rotate(float rad, Vec2 origin)
+	{
+		isTransformDirty = true;
+
+		for (Line &line : lines)
+		{
+			line.isDirty = true;
+			line.p1 = Util::rotate(line.p1, rad, origin);
+			line.p2 = Util::rotate(line.p2, rad, origin);
+		}
+
+		for (Vertex &vertex : vertices)
+			vertex.pos = Util::rotate(vertex.pos, rad, origin);
+	}
+
 
 }

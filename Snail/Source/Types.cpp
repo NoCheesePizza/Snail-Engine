@@ -94,7 +94,33 @@ namespace Snail
 	Line::Line(Vec2 _p1, Vec2 _p2, std::optional<unsigned> _edge)
 		: p1(_p1), p2(_p2), edge(_edge)
 	{
-		recompute();
+		update();
+
+		glGenVertexArrays(1, &vaoId);
+		glBindVertexArray(vaoId);
+
+		glGenBuffers(1, &vboId);
+		glBindBuffer(GL_ARRAY_BUFFER, vboId);
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 8, vbo.data(), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, static_cast<void *>(0));
+		glEnableVertexAttribArray(0);
+
+		glGenBuffers(1, &eboId);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * 6, ebo.data(), GL_DYNAMIC_DRAW);
+	}
+
+	Line::~Line()
+	{
+		if (!vaoId || !vboId || !eboId)
+		{
+			crashIf(vaoId || vboId || eboId, "One or more of vaoId/vboId/eboId doesn't match");
+
+			glDeleteBuffers(1, &eboId);
+			glDeleteBuffers(1, &vboId);
+			glDeleteVertexArrays(1, &vaoId);
+		}
 	}
 
 	std::string Line::stringify() const 
@@ -131,63 +157,58 @@ namespace Snail
 		return !ifIsOnOneSide({ that.p1, that.p2 });
 	}
 
-	std::optional<Vec2> Line::findIntersection(const Line &that) const
+	IntersectData Line::findIntersection(const Line &that, float error) const
 	{
-		float s = (dir.x * that.p1.y - dir.x * p1.y - dir.y * that.p1.x + dir.y * p1.x) /
+		IntersectData ret;
+		if (Util::isEqual(dir.y * that.dir.x - dir.x * that.dir.y, 0.f) || 
+			(Util::isEqual(dir.x, 0.f) && Util::isEqual(dir.y, 0.f)))
+			return ret;
+
+		ret.s = (dir.x * that.p1.y - dir.x * p1.y - dir.y * that.p1.x + dir.y * p1.x) /
 			(dir.y * that.dir.x - dir.x * that.dir.y);
-		float t = (that.p1.x + s * that.dir.x - p1.x) / dir.x;
-		if (s > 0.f && s < 1.f && t > 0.f && t < 1.f)
-			return that.p1 + that.dir * s;
-		return std::nullopt;
+		ret.t = dir.x ? (that.p1.x + ret.s * that.dir.x - p1.x) / dir.x : 
+			(that.p1.y + ret.s * that.dir.y - p1.y) / dir.y;
+
+		if (ret.s >= 0.f + error && ret.s <= 1.f - error && ret.t >= 0.f + error && ret.t <= 1.f + error)
+		{
+			ret.isIntersecting = true;
+			ret.intersection = that.p1 + that.dir * ret.s;
+		}
+		return ret;
 	}
 
-	void Line::recompute()
+	void Line::update()
 	{
+		if (!isDirty)
+			return;
+		isDirty = false;
+
 		dir = (p2 - p1);
 		dirHat = dir.normalize();
 		norm = (p2 - p1).inwardNormal();
 		normHat = norm.normalize();
-	}
 
-	void Line::update(float stroke)
-	{
-		if (shldUpdatePos)
+		float halfStroke = stroke / 2.f;
+		Vec2 curr = p1 + normHat * halfStroke;
+		vbo[0] = curr.x;
+		vbo[1] = curr.y;
+
+		curr = p1 - normHat * halfStroke;
+		vbo[2] = curr.x;
+		vbo[3] = curr.y;
+
+		curr = p2 + normHat * halfStroke;
+		vbo[4] = curr.x;
+		vbo[5] = curr.y;
+
+		curr = p2 - normHat * halfStroke;
+		vbo[6] = curr.x;
+		vbo[7] = curr.y;
+
+		if (vboId)
 		{
-			return;
-		}
-
-		if (shldUpdateBuffers)
-		{
-			float halfStroke = stroke / 2.f;
-			Vec2 curr = p1 + normHat * halfStroke;
-			vbo[0] = curr.x;
-			vbo[1] = curr.y;
-
-			curr = p1 - normHat * halfStroke;
-			vbo[2] = curr.x;
-			vbo[3] = curr.y;
-
-			curr = p2 + normHat * halfStroke;
-			vbo[4] = curr.x;
-			vbo[5] = curr.y;
-
-			curr = p2 - normHat * halfStroke;
-			vbo[6] = curr.x;
-			vbo[7] = curr.y;
-
-			glGenVertexArrays(1, &vaoId);
-			glBindVertexArray(vaoId);
-
-			glGenBuffers(1, &vboId);
 			glBindBuffer(GL_ARRAY_BUFFER, vboId);
-
 			glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 8, vbo.data(), GL_DYNAMIC_DRAW);
-			glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, static_cast<void *>(0));
-			glEnableVertexAttribArray(0);
-
-			glGenBuffers(1, &eboId);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * 6, ebo.data(), GL_DYNAMIC_DRAW);
 		}
 	}
 
