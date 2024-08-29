@@ -9,36 +9,40 @@
 #include <iomanip>
 #include <sstream>
 #include <iostream>
+#include <unordered_map>
 
-// called by the user when a logic or runtime error occurs (user must implement) to crash the program gracefully
+/*! ------------ Macros ------------ */
+
+// debugging
 #define crashIf(condition, reason) do { if (condition) Debugger::log(-1, reason, __FILE__, __LINE__); } while (0)
-
-#define gs(system) Core::getSystem<system>()
-
-#define unref(param) param
-
-/*! ------------ Constants ------------ */
-
-// buffer sizes
-#define LEN 16 // maximum length of some string (for printing to look neat)
-#define LONG_LEN 32
-#define SMALL 64
-#define MEDIUM 256
-#define BIG 1024
-
-// other sizes
-#define MAX_ENTITIES 2048
 
 // printing
 #define nl "\n"
 #define toStr(val) std::to_string(val)
-#define PRINT(...) Util::print(#__VA_ARGS__, __VA_ARGS__)
-#define WHITESPACE " \n\t\r\v\f"
+#define printv(...) Util::print(#__VA_ARGS__, __VA_ARGS__)
+#define whitespace " \n\t\r\v\f"
 
-// time
-#define NOW std::chrono::steady_clock::now()
-#define EPSILON 0.000001f
-#define PI 3.141592f
+// convenience
+#define gs(system) Core::getSystem<system>()
+#define unref(param) param
+#define rightNow std::chrono::steady_clock::now()
+
+/*! ------------ Constants ------------ */
+
+// buffer sizes
+constexpr unsigned LEN = 16; // maximum length of some string (for printing to look neat)
+constexpr unsigned LONG_LEN = 32;
+constexpr unsigned SMALL = 64;
+constexpr unsigned MEDIUM = 256;
+constexpr unsigned BIG = 1024;
+constexpr unsigned MAX_ENTITIES = 2048;
+constexpr unsigned MAX_COMPONENTS = 2; // change if components are added/removed
+
+// math
+constexpr float EPSILON = 0.000001f;
+constexpr float PI = 3.141592f;
+
+/*! ------------ Functions ------------ */
 
 namespace Snail
 {
@@ -47,6 +51,8 @@ namespace Snail
 
 	namespace Util
 	{
+
+		/*! ------------ Math ------------ */
 
 		inline float radToDeg(float rad)
 		{
@@ -58,7 +64,7 @@ namespace Snail
 			return deg * static_cast<float>(PI) / 180.f;
 		}
 
-		inline Vec2 rotate(Vec2 pos, float rad, Vec2 origin)
+		inline Vec2 rotate(Vec2 pos, float rad, Vec2 origin = Vec2())
 		{
 			Vec2 dir = pos - origin, temp;
 			float length = dir.length();
@@ -72,14 +78,37 @@ namespace Snail
 			return temp;
 		}
 
-		inline std::string toString(bool val)
+		inline float calcRot(Vec2 dir)
 		{
-			return val ? "true" : "false";
+			return std::atan2f(dir.y, dir.x);
+		}
+
+		inline int round(float val)
+		{
+			return ((static_cast<int>(val * 10.f) % 10 < 5) ? static_cast<int>(val) : static_cast<int>(val) + 1);
+		}
+
+		inline float clamp(float value, float lower, float upper)
+		{
+			return value > upper ? upper : value < lower ? lower : value;
 		}
 
 		inline bool isEqual(float flt1, float flt2)
 		{
-			return (flt1 - flt2 > 0 ? flt1 - flt2 : flt2 - flt1) <= EPSILON;
+			return (flt1 - flt2 > 0.f ? flt1 - flt2 : flt2 - flt1) <= EPSILON;
+		}
+
+		template <typename T>
+		T normalize(T val)
+		{
+			return val ? val / std::abs(val) : T();
+		}
+
+		/*! ------------ Strings ------------ */
+
+		inline std::string toString(bool val)
+		{
+			return val ? "true" : "false";
 		}
 
 		inline std::string quote(std::string const &str, char delim = '"')
@@ -101,15 +130,12 @@ namespace Snail
 			return words;
 		}
 
-		// @brief removes the leading and trailing whitespaces of the given string
-		// @brief toTrim: the string to trim (this value is modified to be the same as the return value too)
-		// @returns the trimmed string
 		inline std::string trimString(std::string &toTrim)
 		{
-			size_t pos = toTrim.find_first_not_of(WHITESPACE);
+			size_t pos = toTrim.find_first_not_of(whitespace);
 			if (pos != std::string::npos)
 				toTrim = toTrim.substr(pos);
-			pos = toTrim.find_last_not_of(WHITESPACE);
+			pos = toTrim.find_last_not_of(whitespace);
 			if (pos != std::string::npos)
 				toTrim = toTrim.substr(0, pos + 1);
 			return toTrim;
@@ -128,13 +154,13 @@ namespace Snail
 		template <typename T>
 		std::string ptrToStr(T *ptr)
 		{
-			std::stringstream ss;
-			ss << static_cast<const void *>(ptr);
-			return ss.str();
+			std::ostringstream oss;
+			oss << static_cast<const void *>(ptr);
+			return oss.str();
 		}
 
-		// @brief retrieves the function signature of the given function
-		// @return a string representing the function signature
+		/*! ------------ Printing ------------ */
+
 		template <typename Func>
 		std::string getFunctionSignature(Func const &func) noexcept
 		{
@@ -158,7 +184,7 @@ namespace Snail
 		// Function to print each variable with its name and value
 		template<typename T, typename... Args>
 		void printVariables(const std::vector<std::string> &names, size_t index,
-			const T &value, const Args&... args)
+			const T &value, const Args &...args)
 		{
 			if (index < names.size())
 			{
@@ -171,7 +197,7 @@ namespace Snail
 
 		// Main function to print the variables
 		template<typename... Args>
-		void print(const std::string &namesStr, const Args&... args)
+		void print(const std::string &namesStr, const Args &...args)
 		{
 			std::vector<std::string> names = Util::splitString(namesStr, ',');
 			Util::printVariables(names, 0, args...);
@@ -195,6 +221,50 @@ namespace Snail
 				os << *curr << (std::next(curr) == container.end() ? "" : nl);
 			os << " ]";
 			return os;
+		}
+
+		/*! ------------ Random ------------ */
+
+		inline int randInt(int min, int max)
+		{
+			return (max - min + 1) ? rand() % (max - min + 1) + min : min; // in case division by 0
+		}
+
+		inline float randFloat(float min, float max)
+		{
+			return static_cast<float>(rand()) / RAND_MAX * (max - min) + min;
+		}
+
+		/*! ------------ Lerps ------------ */
+
+		inline float getPercent(float start, float end, float curr)
+		{
+			return (curr - start) / (end - start);
+		}
+
+		inline float lerp(float start, float end, float percentage)
+		{
+			return start + (end - start) * percentage;
+		}
+
+		inline float easeIn(float curr, float deg = 2.f)
+		{
+			return powf(curr, deg);
+		}
+
+		inline float flip(float curr)
+		{
+			return 1.f - curr;
+		}
+
+		inline float easeOut(float curr, float deg = 2.f)
+		{
+			return flip(powf(flip(curr), deg));
+		}
+
+		inline float easeInOut(float curr, float degIn = 2.f, float degOut = 2.f)
+		{
+			return lerp(easeIn(curr, degIn), easeOut(curr, degOut), curr);
 		}
 
 	}

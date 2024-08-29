@@ -1,7 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "Utility.h"
+#include "Types.h"
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -15,7 +15,8 @@ namespace Snail
 
 	class Renderer : public System
 	{
-		GLFWwindow *window;
+		GLFWwindow *windowPtr = nullptr;
+		Window window;
 
 		unsigned currShader = 0;
 
@@ -33,7 +34,8 @@ namespace Snail
 		void update() override;
 		void free() override;
 
-		void setWindow(GLFWwindow *_window);
+		void setWindowPtr(GLFWwindow *_windowPtr);
+		void setWindow(const Window &_window);
 		
 		void useVertFragShader(const std::string &name);
 		unsigned getCurrShader();

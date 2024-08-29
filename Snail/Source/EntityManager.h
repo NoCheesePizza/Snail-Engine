@@ -31,7 +31,9 @@ namespace Snail
 
 		void setSignature(EntityId id, Signature signature);
 		Signature getSignature(EntityId id);
-		bool hasComponent(EntityId entity, Component comp);
+		bool hasComponent(EntityId entity, CompId comp);
+		bool hasAnyComponents(EntityId entity, const std::vector<std::string> &comps);
+		bool hasAllComponents(EntityId entity, const std::vector<std::string> &comps);
 	};
 
 }

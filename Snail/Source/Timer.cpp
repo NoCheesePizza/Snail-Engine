@@ -77,13 +77,13 @@ namespace Snail
 
 	void Time::beginDt()
 	{
-		loopStart = NOW;
+		loopStart = rightNow;
 	}
 
 	void Time::endDt()
 	{
 		prevProfileData = currProfileData;
-		dt.actual = getSeconds(NOW - loopStart);
+		dt.actual = getSeconds(rightNow - loopStart);
 
 		// calculate percentage usage of each system
 		for (auto &[label, data] : prevProfileData)
@@ -92,7 +92,7 @@ namespace Snail
 		// wait for target dt to be reached
 		if (dt.target)
 			while (dt.actual < dt.target)
-				dt.actual = getSeconds(NOW - loopStart);
+				dt.actual = getSeconds(rightNow - loopStart);
 	}
 
 	TimeData Time::getDt()
@@ -102,12 +102,12 @@ namespace Snail
 
 	void Time::beginProfile()
 	{
-		profileStart = NOW;
+		profileStart = rightNow;
 	}
 
 	void Time::endProfile(const std::string &label)
 	{
-		currProfileData[label] = ProfileData{ getSeconds(NOW - profileStart) };
+		currProfileData[label] = ProfileData{ getSeconds(rightNow - profileStart) };
 	}
 
 	const std::unordered_map<std::string, ProfileData> &Time::getProfileData()

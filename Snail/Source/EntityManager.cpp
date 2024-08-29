@@ -1,4 +1,5 @@
 #include "EntityManager.h"
+#include "ComponentManager.h"
 #include "Timer.h"
 #include "Core.h"
 
@@ -62,9 +63,25 @@ namespace Snail
 		return entities[id];
 	}
 
-	bool EntityManager::hasComponent(EntityId entity, Component comp)
+	bool EntityManager::hasComponent(EntityId entity, CompId comp)
 	{
-		return getSignature(entity).test(static_cast<size_t>(comp));
+		return getSignature(entity).test(comp);
+	}
+
+	bool EntityManager::hasAnyComponents(EntityId entity, const std::vector<std::string> &comps)
+	{
+		Signature toCompare;
+		for (const std::string &comp : comps)
+			toCompare.set(gs(ComponentManager)->getCompId(comp));
+		return (toCompare | getSignature(entity)) == Signature().set();
+	}
+
+	bool EntityManager::hasAllComponents(EntityId entity, const std::vector<std::string> &comps)
+	{
+		Signature toCompare;
+		for (const std::string &comp : comps)
+			toCompare.set(gs(ComponentManager)->getCompId(comp));
+		return (toCompare & getSignature(entity)) == toCompare;
 	}
 
 }

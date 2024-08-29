@@ -52,16 +52,24 @@ namespace Snail
 		setUniform("origin");
 
 		// set static uniforms
-		glUniform2f(gs(Renderer)->getUniform("screenSize"), 640.f, 280.f);
+		glUniform2f(gs(Renderer)->getUniform("screenSize"), window.size.x, window.size.y);
 	}
 
 	void Renderer::update()
 	{
 		for (EntityId entity : gs(EntityManager)->getEntityIds())
 		{
+			if (!gs(EntityManager)->hasAllComponents(entity, { "Shape", "Transform" }))
+				continue;
+
 			ShapeComponent &shape = gs(ComponentManager)->getComponent<ShapeComponent>(entity);
 			TransformComponent &transform = gs(ComponentManager)->getComponent<TransformComponent>(entity);
-			shape.translate(Vec2(50.f, 25.f) * gs(Time)->getDt().actual);
+
+			//shape.translate(Vec2(50.f, 20.f) * gs(Time)->getDt().actual);
+			//shape.rotate(PI / 4.f * gs(Time)->getDt().actual);
+			//shape.scale(Vec2(50.f, 20.f) * gs(Time)->getDt().actual, transform.scale / 2.f);
+			//transform.pos += Vec2(50.f, 20.f) / 2.f * gs(Time)->getDt().actual;
+			//transform.scale += Vec2(50.f, 20.f) * gs(Time)->getDt().actual;
 			shape.update();
 
 			if (shape.triangles.size())
@@ -96,7 +104,12 @@ namespace Snail
 			glDeleteProgram(id);
 	}
 
-	void Renderer::setWindow(GLFWwindow *_window)
+	void Renderer::setWindowPtr(GLFWwindow *_windowPtr)
+	{
+		windowPtr = _windowPtr;
+	}
+
+	void Renderer::setWindow(const Window &_window)
 	{
 		window = _window;
 	}

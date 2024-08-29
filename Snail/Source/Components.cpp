@@ -12,6 +12,16 @@
 namespace Snail
 {
 
+	Vec2 ShapeComponent::findNewDir(Vec2 currPos, Vec2 scaleDir, Vec2 halfScale) const
+	{
+		Vec2 newDir; // displacement?
+		if (currPos.x > 0.f && scaleDir.x > 0.f || currPos.x < 0.f && scaleDir.x < 0.f)
+			newDir.x = fabs(currPos.x) / fabs(halfScale.x) * scaleDir.x;
+		if (currPos.y > 0.f && scaleDir.y > 0.f || currPos.y < 0.f && scaleDir.y < 0.f)
+			newDir.y = fabs(currPos.y) / fabs(halfScale.y) * scaleDir.y;
+		return newDir;
+	}
+
 	bool ShapeComponent::ifIsConvex(const Line &line) const
 	{
 		std::vector<Vec2> positions;
@@ -61,10 +71,10 @@ namespace Snail
 					}
 				}
 
-			if (!(intersections % 2))
-				++distribution.first;
-			else
+			if (intersections % 2)
 				++distribution.second;
+			else
+				++distribution.first;
 		}
 
 		return distribution.first > distribution.second;
@@ -106,6 +116,8 @@ namespace Snail
 
 	void ShapeComponent::update()
 	{
+		isTransformDirty = isDirty ? false : isTransformDirty;
+
 		if (isTransformDirty)
 		{
 			isTransformDirty = false;
@@ -316,8 +328,8 @@ namespace Snail
 			}
 
 			// debug info
-			PRINT(edges);
-			PRINT(triangles);
+			printv(edges);
+			printv(triangles);
 
 			/*! ------------ Initialise EBO ------------ */
 
@@ -370,21 +382,23 @@ namespace Snail
 			vertex.pos += dir;
 	}
 
-	void ShapeComponent::scale(Vec2 dir)
+	void ShapeComponent::scale(Vec2 dir, Vec2 halfScale)
 	{
 		isTransformDirty = true;
-		Vec2 halfDir = dir / 2.f;
-		Vec2 normdir = dir.normalize();
-
+		Vec2 halfDir = -dir / 2.f;
+		
 		for (Line &line : lines)
 		{
 			line.isDirty = true;
-			line.p1 += halfDir * line.p1.normalize().dot(dir);
-			line.p2 += halfDir * line.p2.normalize().dot(dir);
+			line.p1 += findNewDir(line.p1, dir, halfScale) + halfDir;
+			line.p2 += findNewDir(line.p2, dir, halfScale) + halfDir;
 		}
 
+		for (Vec2 &raycast : raycasts)
+			raycast += findNewDir(raycast, dir, halfScale) + halfDir;
+
 		for (Vertex &vertex : vertices)
-			vertex.pos += halfDir * vertex.pos.normalize().dot(dir);
+			vertex.pos += findNewDir(vertex.pos, dir, halfScale) + halfDir;
 	}
 
 	void ShapeComponent::rotate(float rad, Vec2 origin)
@@ -397,6 +411,9 @@ namespace Snail
 			line.p1 = Util::rotate(line.p1, rad, origin);
 			line.p2 = Util::rotate(line.p2, rad, origin);
 		}
+
+		for (Vec2 &raycast : raycasts)
+			raycast = Util::rotate(raycast, rad, origin);
 
 		for (Vertex &vertex : vertices)
 			vertex.pos = Util::rotate(vertex.pos, rad, origin);

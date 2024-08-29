@@ -43,11 +43,12 @@ namespace Snail
 		void update(); // call every frame before drawing
 
 		void translate(Vec2 dir); // assume transform component's pos has been updated
-		void scale(Vec2 dir); // assume transform component's pos and scale has been updated
-		void rotate(float rad, Vec2 origin); // assume transform component's rot has been updated
+		void scale(Vec2 dir, Vec2 halfScale); // assume transform component's pos and scale has been updated
+		void rotate(float rad, Vec2 origin = Vec2()); // assume transform component's rot has been updated
 
 	private:
 
+		Vec2 findNewDir(Vec2 currPos, Vec2 scaleDir, Vec2 halfScale) const;
 		bool ifIsConvex(const Line &line) const;
 		bool ifIsOutside(const Line &line, unsigned i, unsigned j);
 		bool ifHasIntersection(const Line &line, unsigned i, unsigned j) const;

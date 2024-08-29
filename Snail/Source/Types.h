@@ -10,17 +10,9 @@ namespace Snail
 {
 	/*! ------------ ECS ------------ */
 
-	using EntityId = size_t;
-	using CompId = size_t;
-
-	enum class Component : CompId
-	{
-		TRANSFORM,
-		SHAPE,
-		MAX_COMPONENTS
-	};
-
-	using Signature = std::bitset<static_cast<size_t>(Component::MAX_COMPONENTS)>;
+	using EntityId = unsigned;
+	using CompId = unsigned;
+	using Signature = std::bitset<MAX_COMPONENTS>;
 
 	/*! ------------ Graphics ------------ */
 
@@ -45,6 +37,12 @@ namespace Snail
 		ADDED,
 		REMOVED,
 		MAX_EDGE_TYPES
+	};
+
+	struct Window
+	{
+		Vec2 size;
+		std::string name;
 	};
 
 	struct IntersectData
